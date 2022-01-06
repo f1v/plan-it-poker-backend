@@ -7,7 +7,7 @@ const env = require("dotenv").config();
 
 // variables
 const app = express();
-const port = 4000;
+const port = process.env.PORT || 4000;
 const server = createServer(app);
 const io = new Server(server);
 const { Create, Collection } = query;
@@ -21,8 +21,11 @@ const client = new Client({
   domain: "db.us.fauna.com",
 });
 
-app.get("/", async (req, res) => {
-  res.sendFile(__dirname + "/index.html");
+// Middleware
+app.use(express.static('public')); // Builds frontend of the app in the public folder.
+
+app.get("/user", async (req, res) => {
+  // res.sendFile(__dirname + "/index.html");
   try {
     const createP = await client.query(
       Create(Collection("Users"), {
