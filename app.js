@@ -49,8 +49,16 @@ io.on("connection", (socket) => {
   console.log("a user connected");
 
   socket.on("username", (u) => {
-    if (!users.find((user) => user.userId === u.userId)) {
+    if (!users.find((user) => user.userId === u.userId) && u.userId) {
       users.push(u);
+    }
+    io.emit("users", users);
+  });
+
+  socket.on("kickUser", (userId) => {
+    const userIndex = users.findIndex((user) => user.userId === userId);
+    if (userIndex !== -1) {
+      users.splice(userIndex, 1);
     }
     io.emit("users", users);
   });
