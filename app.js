@@ -104,6 +104,16 @@ io.on("connection", (socket) => {
     io.to(`${room}`).emit("cards flipped", msg);
   });
 
+  socket.on("cardValues", (values) => {
+    users.forEach((u) => {
+      if (!values.includes(u.vote)){
+        u.vote = null;
+      }
+    })
+    io.emit("reset", users);
+    io.emit("cardValues", values);
+  });
+
   socket.on("reset", () => {
     const room = socket.handshake.query.id;
     const users = rooms[room].users;
