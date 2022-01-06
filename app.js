@@ -3,6 +3,7 @@ const express = require("express");
 const { query, Client } = require("faunadb");
 const { Server } = require("socket.io");
 const { createServer } = require("http");
+const cors = require('cors');
 const env = require("dotenv").config();
 
 // variables
@@ -11,6 +12,18 @@ const port = process.env.PORT || 4000;
 const server = createServer(app);
 const io = new Server(server);
 const { Create, Collection } = query;
+
+//Allows cors requests from our frontend site, but blocks from other sites
+const whitelist = ['https://plan-it-poker-clone.netlify.app/', 'https://plan-it-hackathon-backend.herokuapp.com/', 'http://localhost:3000']
+const corsOptions = {
+  origin: (origin, callback) =>{
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
 
 // Secret
 const secret = process.env.FAUNA_ADMIN_KEY;
@@ -23,9 +36,9 @@ const client = new Client({
 
 // Middleware
 app.use(express.static('public')); // Builds frontend of the app in the public folder.
+app.use(cors(corsOptions)); // middleware to disable CORS and allow our external site to communicate
 
 app.get("/user", async (req, res) => {
-  // res.sendFile(__dirname + "/index.html");
   try {
     const createP = await client.query(
       Create(Collection("Users"), {
