@@ -105,13 +105,15 @@ io.on("connection", (socket) => {
   });
 
   socket.on("cardValues", (values) => {
+    const room = socket.handshake.query.id;
+    const users = rooms[room].users;
     users.forEach((u) => {
       if (!values.includes(u.vote)){
         u.vote = null;
       }
     })
-    io.emit("reset", users);
-    io.emit("cardValues", values);
+    io.to(`${room}`).emit("reset", users);
+    io.to(`${room}`).emit("cardValues", values);
   });
 
   socket.on("reset", () => {
