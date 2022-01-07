@@ -72,11 +72,9 @@ io.on("connection", (socket) => {
       await createRoom(u.room)
     };
     const users = rooms[u.room].users;
-    console.log('rooms', rooms);
     if (!users.find((user) => user.userId === u.userId) && u.userId) {
       users.push(u);
     }
-    console.log('users', users);
     io.to(`${u.room}`).emit("users", users);
   });
 
