@@ -51,7 +51,6 @@ app.get("/user", async (req, res) => {
   }
 });
 
-const users=[];
 const rooms = {};
 
 const createRoom = (id) => {
