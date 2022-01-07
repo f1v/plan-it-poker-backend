@@ -14,7 +14,7 @@ const io = new Server(server);
 const { Create, Collection } = query;
 
 //Allows cors requests from our frontend site, but blocks from other sites
-const whitelist = ['https://plan-it-poker-clone.netlify.app/', 'https://plan-it-hackathon-backend.herokuapp.com/', 'http://localhost:3000']
+const whitelist = ['https://plan-it-poker-clone.netlify.app/', 'https://plan-it-hackathon-backend.herokuapp.com/', 'http://localhost:3000', 'http://localhost:4000']
 const corsOptions = {
   origin: (origin, callback) =>{
     if (whitelist.indexOf(origin) !== -1) {
@@ -51,7 +51,12 @@ app.get("/user", async (req, res) => {
   }
 });
 
-const users = [];
+const users=[];
+const rooms = {};
+
+const createRoom = (id) => {
+  rooms[id] = {id: id, users: [], cardsFlipped: false};
+};
 
 // const formatUserValues = user => ({
 //   username: user,
@@ -61,40 +66,53 @@ const users = [];
 io.on("connection", (socket) => {
   console.log("a user connected");
 
-  socket.on("username", (u) => {
+  socket.on("username", async (u) => {
+    socket.join(`${u.room}`);
+    if (!rooms[u.room]) {
+      await createRoom(u.room)
+    };
+    const users = rooms[u.room].users;
+    console.log('rooms', rooms);
     if (!users.find((user) => user.userId === u.userId) && u.userId) {
       users.push(u);
     }
-    io.emit("users", users);
+    console.log('users', users);
+    io.to(`${u.room}`).emit("users", users);
   });
 
   socket.on("kickUser", (userId) => {
+    const room = socket.handshake.query.id;
+    const users = rooms[room].users;
     const userIndex = users.findIndex((user) => user.userId === userId);
     if (userIndex !== -1) {
       users.splice(userIndex, 1);
     }
-    io.emit("users", users);
+    io.to(`${room}`).emit("users", users);
   });
 
   socket.on("vote", (obj) => {
+    const room = socket.handshake.query.id;
+    const users = rooms[room].users;
     const userIndex = users.findIndex((user) => user.userId === obj.userId);
     if (userIndex !== -1) {
       users[userIndex].vote = obj.vote;
     } else {
       users.push(obj);
     }
-    console.log("users", users);
-    io.emit("vote", users);
+    io.to(`${room}`).emit("vote", users);
   });
 
   socket.on("cards flipped", (msg) => {
-    io.emit("cards flipped", msg);
+    const room = socket.handshake.query.id;
+    io.to(`${room}`).emit("cards flipped", msg);
   });
 
   socket.on("reset", () => {
+    const room = socket.handshake.query.id;
+    const users = rooms[room].users;
     users.forEach((u) => (u.vote = null));
-    io.emit("reset", users);
-    io.emit("cards flipped", false);
+    io.to(`${room}`).emit("reset", users);
+    io.to(`${room}`).emit("cards flipped", false);
   });
 
   socket.on("disconnect", () => {
